@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IronGate 🛡️ Tático</title>
+    <link rel="stylesheet" href="/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-effects">
+        <div class="glow red-glow"></div>
+        <div class="glow blue-glow"></div>
+        <div class="grid-overlay"></div>
+    </div>
+
+    <div class="dashboard-container">
+        <header class="glass-header">
+            <div class="logo">
+                <span class="shield">🛡️</span>
+                <h1>IRON<span class="accent">GATE</span></h1>
+            </div>
+            <div class="status-indicator">
+                <div id="guard-status" class="led yellow"></div>
+                <span id="guard-text">Conectando...</span>
+            </div>
+        </header>
+
+        <main class="grid-layout">
+            <section class="glass-panel stats-panel">
+                <h2>Métricas Ao Vivo</h2>
+                <div class="stat-grid">
+                    <div class="stat-box">
+                        <span class="stat-label">Total Requests</span>
+                        <span id="stat-requests" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">IPs Suspeitos</span>
+                        <span id="stat-ips" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-box critical">
+                        <span class="stat-label">Bans Ativos</span>
+                        <span id="stat-bans" class="stat-value">0</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="glass-panel table-panel">
+                <div class="panel-header">
+                    <h2>🎯 Radares de IPs Ativos</h2>
+                    <div class="actions">
+                        <input type="text" id="ip-input" placeholder="0.0.0.0" class="glass-input">
+                        <button id="btn-block" class="btn btn-danger">Bloquear</button>
+                        <button id="btn-whitelist" class="btn btn-primary">Whitelist</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="ips-table">
+                        <thead>
+                            <tr>
+                                <th>IP</th>
+                                <th>Score</th>
+                                <th>Requisições</th>
+                                <th>Strikes</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Preenchido via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="glass-panel log-panel">
+                <h2>Terminal de Eventos</h2>
+                <div id="log-terminal" class="terminal-window">
+                    <div class="log-entry sys">> Iniciando radar IronGate v1.0.0...</div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <script src="/app.js"></script>
+</body>
+</html>
