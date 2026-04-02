@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*' # Dispara quando uma tag como v1.0.0 for criada
 
+permissions:
+  contents: write
+
 jobs:
   build-release:
     name: Build & Release (Linux)
