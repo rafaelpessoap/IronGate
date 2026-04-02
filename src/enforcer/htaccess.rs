@@ -16,6 +16,21 @@ pub enum Error {
     CorruptAssembly,
 }
 
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Error::Io(e) => write!(f, "IO: {}", e),
+            Error::EmergencyMode => write!(f, "Emergency mode ativo"),
+            Error::TooManyRules(n, max) => write!(f, "Regras ({}) excedem limite ({})", n, max),
+            Error::ExternalModification => write!(f, "Modificação externa detectada no .htaccess"),
+            Error::CrossFilesystem => write!(f, "Backup dir em filesystem diferente"),
+            Error::CorruptAssembly => write!(f, "Montagem corrompida do .htaccess"),
+        }
+    }
+}
+
+impl std::error::Error for Error {}
+
 impl From<io::Error> for Error {
     fn from(err: io::Error) -> Self {
         Error::Io(err)
@@ -213,6 +228,10 @@ impl HtaccessGuard {
             .collect();
 
         backups.sort_by_key(|dir| dir.metadata().and_then(|m| m.modified()).ok());
+        if backups.is_empty() {
+            return Err(Error::Io(std::io::Error::new(std::io::ErrorKind::NotFound, "Nenhum backup disponível para restauração")));
+        }
+
         if let Some(latest) = backups.last() {
             self.restore_backup(&latest.path())?;
         }

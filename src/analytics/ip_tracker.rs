@@ -52,6 +52,7 @@ pub struct IpState {
     pub ban_until: Option<DateTime<Utc>>,
     pub is_whitelisted: bool,
     pub threat_score: f32,
+    pub custom_counters: std::collections::HashMap<String, u32>,
 }
 
 impl IpState {
@@ -71,6 +72,7 @@ impl IpState {
             ban_until: None,
             is_whitelisted: false,
             threat_score: 0.0,
+            custom_counters: std::collections::HashMap::new(),
         }
     }
 }

@@ -644,6 +644,7 @@ dependencies = [
  "clap",
  "futures-util",
  "linemux",
+ "parking_lot",
  "regex",
  "serde",
  "serde_json",
