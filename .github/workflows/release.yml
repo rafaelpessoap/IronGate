@@ -1,0 +1,41 @@
+name: Release Builder
+
+on:
+  push:
+    tags:
+      - 'v*' # Dispara quando uma tag como v1.0.0 for criada
+
+jobs:
+  build-release:
+    name: Build & Release (Linux)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Instalar Rust Toolchain (Stable)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Compilar Binário Oficial (Release Performance)
+        run: cargo build --release --target x86_64-unknown-linux-gnu
+
+      - name: Preparar Artefato
+        run: |
+          mkdir -p release-pkg
+          cp target/x86_64-unknown-linux-gnu/release/irongate release-pkg/
+          cp config.toml release-pkg/ || true
+          tar -czvf irongate-linux-x86_64.tar.gz -C release-pkg .
+
+      - name: Publicar GitHub Release Oficial
+        uses: softprops/action-gh-release@v1
+        with:
+          files: irongate-linux-x86_64.tar.gz
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
