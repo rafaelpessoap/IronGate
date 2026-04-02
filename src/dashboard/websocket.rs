@@ -2,9 +2,9 @@ use axum::{
     extract::ws::{Message, WebSocket, WebSocketUpgrade},
     response::Response,
 };
-use tokio::sync::broadcast;
-use serde::Serialize;
 use futures_util::{sink::SinkExt, stream::StreamExt};
+use serde::Serialize;
+use tokio::sync::broadcast;
 
 #[derive(Clone, Serialize, Debug)]
 pub struct WsMessage {
@@ -14,10 +14,7 @@ pub struct WsMessage {
     pub message: Option<String>,
 }
 
-pub async fn ws_handler(
-    ws: WebSocketUpgrade,
-    tx: broadcast::Sender<WsMessage>,
-) -> Response {
+pub async fn ws_handler(ws: WebSocketUpgrade, tx: broadcast::Sender<WsMessage>) -> Response {
     ws.on_upgrade(move |socket| handle_socket(socket, tx))
 }
 

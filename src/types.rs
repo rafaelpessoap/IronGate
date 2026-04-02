@@ -1,10 +1,18 @@
-use std::net::IpAddr;
 use chrono::{DateTime, Utc};
+use std::net::IpAddr;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum RequestType {
-    Page, Ajax, Static, Api, WpAdmin,
-    WpLogin, WpCron, Checkout, Cart, Other,
+    Page,
+    Ajax,
+    Static,
+    Api,
+    WpAdmin,
+    WpLogin,
+    WpCron,
+    Checkout,
+    Cart,
+    Other,
 }
 
 #[derive(Debug, Clone)]

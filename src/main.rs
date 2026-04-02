@@ -1,7 +1,7 @@
-use tracing::{info, Level};
-use tracing_subscriber::FmtSubscriber;
 use std::env;
 use tokio::sync::broadcast;
+use tracing::{info, Level};
+use tracing_subscriber::FmtSubscriber;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -28,7 +28,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     // O pipeline do core vai rodar aqui...
-    
+
     // Setup de graceful shutdown
     tokio::signal::ctrl_c().await?;
     info!("Desligando IronGate graciosamente...");

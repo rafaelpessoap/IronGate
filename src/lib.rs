@@ -1,6 +1,6 @@
-pub mod config;
-pub mod types;
-pub mod log_ingestor;
 pub mod analytics;
-pub mod enforcer;
+pub mod config;
 pub mod dashboard;
+pub mod enforcer;
+pub mod log_ingestor;
+pub mod types;

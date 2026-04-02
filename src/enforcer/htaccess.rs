@@ -1,10 +1,10 @@
 use crate::types::BlockRule;
+use chrono::Utc;
 use sha2::{Digest, Sha256};
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Read, Write};
 use std::net::IpAddr;
 use std::path::{Path, PathBuf};
-use chrono::Utc;
 
 #[derive(Debug)]
 pub enum Error {
@@ -68,11 +68,11 @@ impl HtaccessGuard {
         if guard.path.exists() {
             let mut content = Vec::new();
             File::open(&guard.path)?.read_to_end(&mut content)?;
-            
+
             let (before, _, after) = Self::split_at_delimiters(&content)?;
             guard.external_content_hash = Some(Self::hash_external_content(&before, &after));
             guard.external_content_snapshot = Some((before, after));
-            
+
             guard.create_backup()?;
         }
 
@@ -83,7 +83,7 @@ impl HtaccessGuard {
         let mut content = Vec::new();
         File::open(&self.path)?.read_to_end(&mut content)?;
 
-        let (before, block, after) = Self::split_at_delimiters(&content)?;
+        let (before, _block, after) = Self::split_at_delimiters(&content)?;
         self.external_content_hash = Some(Self::hash_external_content(&before, &after));
         self.external_content_snapshot = Some((before, after));
 
@@ -133,7 +133,7 @@ impl HtaccessGuard {
         if !rules.is_empty() {
             new_block = Self::format_block(rules);
         }
-        
+
         let mut final_content = Vec::with_capacity(before.len() + new_block.len() + after.len());
         final_content.extend_from_slice(&before);
         final_content.extend_from_slice(&new_block);
@@ -155,7 +155,9 @@ impl HtaccessGuard {
                 let mut check_content = Vec::new();
                 File::open(&self.path)?.read_to_end(&mut check_content)?;
                 let (c_before, _, c_after) = Self::split_at_delimiters(&check_content)?;
-                if Self::hash_external_content(&c_before, &c_after) != self.external_content_hash.unwrap() {
+                if Self::hash_external_content(&c_before, &c_after)
+                    != self.external_content_hash.unwrap()
+                {
                     let _ = self.restore_latest();
                     self.increment_failure();
                     return Err(Error::CorruptAssembly);
@@ -163,7 +165,9 @@ impl HtaccessGuard {
 
                 self.consecutive_failures = 0;
                 self.total_writes += 1;
-                Ok(WriteResult { rules_written: rules.len() })
+                Ok(WriteResult {
+                    rules_written: rules.len(),
+                })
             }
             Err(e) => {
                 self.increment_failure();
@@ -178,10 +182,10 @@ impl HtaccessGuard {
             .create(true)
             .truncate(true)
             .open(tmp_path)?;
-        
+
         file.write_all(content)?;
         file.sync_all()?;
-        
+
         // I2 - Atomic rename
         fs::rename(tmp_path, &self.path)?;
         Ok(())
@@ -191,23 +195,23 @@ impl HtaccessGuard {
         let tmp_path = self.path.with_extension("tmp.restore");
         let mut content = Vec::new();
         File::open(backup_path)?.read_to_end(&mut content)?;
-        
+
         self.write_atomic(&tmp_path, &content)?;
-        
+
         let (before, _, after) = Self::split_at_delimiters(&content)?;
         self.external_content_hash = Some(Self::hash_external_content(&before, &after));
         self.external_content_snapshot = Some((before, after));
         self.emergency_mode = false;
-        
+
         Ok(())
     }
 
     pub fn restore_latest(&mut self) -> Result<()> {
         let mut backups: Vec<_> = fs::read_dir(&self.backup_dir)?
             .filter_map(std::result::Result::ok)
-            .filter(|d| d.path().extension().map_or(false, |ext| ext == "bak"))
+            .filter(|d| d.path().extension().is_some_and(|ext| ext == "bak"))
             .collect();
-            
+
         backups.sort_by_key(|dir| dir.metadata().and_then(|m| m.modified()).ok());
         if let Some(latest) = backups.last() {
             self.restore_backup(&latest.path())?;
@@ -219,7 +223,7 @@ impl HtaccessGuard {
         self.write_rules(&[])?;
         Ok(())
     }
-    
+
     pub fn refresh_hash(&mut self) -> Result<()> {
         let mut content = Vec::new();
         File::open(&self.path)?.read_to_end(&mut content)?;
@@ -234,11 +238,11 @@ impl HtaccessGuard {
         let timestamp = Utc::now().format("%Y-%m-%dT%H-%M-%S").to_string();
         let backup_name = format!(".htaccess.{}.bak", timestamp);
         let backup_path = self.backup_dir.join(&backup_name);
-        
+
         if self.path.exists() {
             fs::copy(&self.path, &backup_path)?;
         }
-        
+
         let _ = self.rotate_backups(100);
         Ok(())
     }
@@ -256,36 +260,53 @@ impl HtaccessGuard {
         if !backup_dir.exists() {
             fs::create_dir_all(backup_dir)?;
         }
-        
-        let path_parent = path.parent().unwrap_or(Path::new("/"));
+
+        let _path_parent = path.parent().unwrap_or(Path::new("/"));
         // Simplificado, vamos assumir ok se conseguimos criar
         let test_file = backup_dir.join(".fs_test");
         if File::create(&test_file).is_ok() {
             let _ = fs::remove_file(test_file);
         } else {
-             return Err(Error::CrossFilesystem);
+            return Err(Error::CrossFilesystem);
         }
-        
+
         Ok(())
     }
 
     fn format_block(rules: &[BlockRule]) -> Vec<u8> {
         let mut out = Vec::new();
-        out.extend_from_slice(b"# BEGIN IronGate - GERENCIADO AUTOMATICAMENTE - N\xC3\x83O EDITAR\n");
+        out.extend_from_slice(
+            b"# BEGIN IronGate - GERENCIADO AUTOMATICAMENTE - N\xC3\x83O EDITAR\n",
+        );
         let timestamp = Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
-        out.extend_from_slice(format!("# Timestamp: {} | Rules: {} | Version: 1.0.0\n", timestamp, rules.len()).as_bytes());
+        out.extend_from_slice(
+            format!(
+                "# Timestamp: {} | Rules: {} | Version: 1.0.0\n",
+                timestamp,
+                rules.len()
+            )
+            .as_bytes(),
+        );
         out.extend_from_slice(b"<IfModule mod_rewrite.c>\n");
         out.extend_from_slice(b"RewriteEngine On\n");
-        
+
         for (i, rule) in rules.iter().enumerate() {
             let escaped_ip = Self::sanitize_ip(&rule.ip).unwrap_or_default();
-            if escaped_ip.is_empty() { continue; }
+            if escaped_ip.is_empty() {
+                continue;
+            }
             let or_clause = if i < rules.len() - 1 { " [OR]" } else { "" };
-            out.extend_from_slice(format!("RewriteCond %{{HTTP_X_FORWARDED_FOR}} ^{}${}\n", escaped_ip, or_clause).as_bytes());
+            out.extend_from_slice(
+                format!(
+                    "RewriteCond %{{HTTP_X_FORWARDED_FOR}} ^{}${}\n",
+                    escaped_ip, or_clause
+                )
+                .as_bytes(),
+            );
         }
-        
+
         if !rules.is_empty() {
-             out.extend_from_slice(b"RewriteRule .* - [F,L]\n");
+            out.extend_from_slice(b"RewriteRule .* - [F,L]\n");
         }
         out.extend_from_slice(b"</IfModule>\n");
         out.extend_from_slice(b"# END IronGate\n");
@@ -296,8 +317,12 @@ impl HtaccessGuard {
         let begin_marker = b"# BEGIN IronGate - GERENCIADO AUTOMATICAMENTE - N\xC3\x83O EDITAR\n";
         let end_marker = b"# END IronGate\n";
 
-        let begin_idx = content.windows(begin_marker.len()).position(|w| w == begin_marker);
-        let end_idx = content.windows(end_marker.len()).position(|w| w == end_marker);
+        let begin_idx = content
+            .windows(begin_marker.len())
+            .position(|w| w == begin_marker);
+        let end_idx = content
+            .windows(end_marker.len())
+            .position(|w| w == end_marker);
 
         if let (Some(b_idx), Some(e_idx)) = (begin_idx, end_idx) {
             if b_idx < e_idx {
@@ -309,7 +334,7 @@ impl HtaccessGuard {
                 ));
             }
         }
-        
+
         // Se a gente não tem o block, insere no topo (antes das demais regras logicas)
         Ok((Vec::new(), Vec::new(), content.to_vec()))
     }
@@ -333,7 +358,7 @@ impl HtaccessGuard {
     fn rotate_backups(&self, keep: usize) -> Result<()> {
         let mut backups: Vec<_> = fs::read_dir(&self.backup_dir)?
             .filter_map(std::result::Result::ok)
-            .filter(|d| d.path().extension().map_or(false, |ext| ext == "bak"))
+            .filter(|d| d.path().extension().is_some_and(|ext| ext == "bak"))
             .collect();
 
         backups.sort_by_key(|dir| dir.metadata().and_then(|m| m.modified()).ok());

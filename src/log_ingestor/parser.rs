@@ -19,7 +19,9 @@ pub fn parse_line(line: &str) -> Option<AccessLogEntry> {
     let client_ip = IpAddr::from_str(ip_str).ok()?;
 
     let ts_str = caps.name("timestamp")?.as_str();
-    let timestamp = DateTime::parse_from_str(ts_str, "%d/%b/%Y:%H:%M:%S %z").ok()?.with_timezone(&chrono::Utc);
+    let timestamp = DateTime::parse_from_str(ts_str, "%d/%b/%Y:%H:%M:%S %z")
+        .ok()?
+        .with_timezone(&chrono::Utc);
 
     let method = caps.name("method")?.as_str().to_string();
     let uri = caps.name("uri")?.as_str().to_string();
@@ -59,7 +61,12 @@ fn determine_request_type(uri: &str) -> RequestType {
         RequestType::Checkout
     } else if uri.contains("?add-to-cart=") || uri.contains("/carrinho/") {
         RequestType::Cart
-    } else if uri.ends_with(".css") || uri.ends_with(".js") || uri.ends_with(".png") || uri.ends_with(".jpg") || uri.ends_with(".woff2") {
+    } else if uri.ends_with(".css")
+        || uri.ends_with(".js")
+        || uri.ends_with(".png")
+        || uri.ends_with(".jpg")
+        || uri.ends_with(".woff2")
+    {
         RequestType::Static
     } else {
         RequestType::Page

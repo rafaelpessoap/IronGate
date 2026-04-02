@@ -1,6 +1,6 @@
-use std::net::IpAddr;
 use chrono::{DateTime, Utc};
 use std::collections::VecDeque;
+use std::net::IpAddr;
 
 #[derive(Debug, Clone)]
 pub struct SlidingWindow {

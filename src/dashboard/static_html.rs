@@ -1,6 +1,6 @@
 use axum::{
-    response::{Html, IntoResponse},
     http::header,
+    response::{Html, IntoResponse},
 };
 
 pub async fn index_html() -> Html<&'static str> {
@@ -8,9 +8,15 @@ pub async fn index_html() -> Html<&'static str> {
 }
 
 pub async fn style_css() -> impl IntoResponse {
-    ([(header::CONTENT_TYPE, "text/css")], include_str!("../../static/style.css"))
+    (
+        [(header::CONTENT_TYPE, "text/css")],
+        include_str!("../../static/style.css"),
+    )
 }
 
 pub async fn app_js() -> impl IntoResponse {
-    ([(header::CONTENT_TYPE, "application/javascript")], include_str!("../../static/app.js"))
+    (
+        [(header::CONTENT_TYPE, "application/javascript")],
+        include_str!("../../static/app.js"),
+    )
 }

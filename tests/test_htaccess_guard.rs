@@ -1,9 +1,9 @@
 use irongate::enforcer::htaccess::HtaccessGuard;
 use irongate::types::BlockRule;
-use std::net::IpAddr;
-use std::str::FromStr;
 use std::fs;
+use std::net::IpAddr;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 const FIXTURE_CONTENT: &[u8] = b"# Bloqueio manual de User-Agents (GPTBot, CCBot, etc.)
 # \xC3\x89 ESSENCIAL que o IronGate preserve essas regras!
@@ -50,46 +50,59 @@ fn setup_test_env(name: &str) -> (PathBuf, PathBuf) {
         fs::remove_dir_all(&test_dir).unwrap();
     }
     fs::create_dir_all(&test_dir).unwrap();
-    
+
     let htaccess_path = test_dir.join(".htaccess");
     let backup_dir = test_dir.join("backups");
-    
+
     fs::write(&htaccess_path, FIXTURE_CONTENT).unwrap();
     fs::create_dir_all(&backup_dir).unwrap();
-    
+
     (htaccess_path, backup_dir)
 }
 
 #[test]
 fn test_preserves_everything_complex() {
     let (htaccess_path, backup_dir) = setup_test_env("preserves_complex");
-    
+
     let mut guard = HtaccessGuard::new(htaccess_path.clone(), backup_dir, 500).unwrap();
-    
-    let rules = vec![
-        BlockRule { ip: IpAddr::from_str("1.1.1.1").unwrap(), reason: "test".to_string() }
-    ];
-    
+
+    let rules = vec![BlockRule {
+        ip: IpAddr::from_str("1.1.1.1").unwrap(),
+        reason: "test".to_string(),
+    }];
+
     let res = guard.write_rules(&rules);
     assert!(res.is_ok(), "Write rules should succeed");
-    
+
     // Validate we changed the rules
     let new_content = fs::read(&htaccess_path).unwrap();
     let old_content_str = String::from_utf8_lossy(FIXTURE_CONTENT);
     let new_content_str = String::from_utf8_lossy(&new_content);
-    
+
     // Assert the original content without the IronGate block matches the new content without the new block
-    assert!(!new_content_str.contains("192\\.168\\.1\\.100"), "Old IP should be removed");
-    assert!(new_content_str.contains("1\\.1\\.1\\.1"), "New IP should be present");
-    assert!(new_content_str.contains("BEGIN WordPress"), "WordPress block preserved");
-    assert!(new_content_str.contains("BEGIN LSCACHE"), "LSCACHE block preserved");
+    assert!(
+        !new_content_str.contains("192\\.168\\.1\\.100"),
+        "Old IP should be removed"
+    );
+    assert!(
+        new_content_str.contains("1\\.1\\.1\\.1"),
+        "New IP should be present"
+    );
+    assert!(
+        new_content_str.contains("BEGIN WordPress"),
+        "WordPress block preserved"
+    );
+    assert!(
+        new_content_str.contains("BEGIN LSCACHE"),
+        "LSCACHE block preserved"
+    );
 }
 
 #[test]
 fn test_enters_emergency_after_3_failures() {
     let (htaccess_path, backup_dir) = setup_test_env("emergency");
     let mut guard = HtaccessGuard::new(htaccess_path.clone(), backup_dir.clone(), 500).unwrap();
-    
+
     // Simulate external edit causing consecutive failures because hash doesn't match
     for _ in 0..3 {
         // Manually mess up the expected hash inside guard by changing file externally
@@ -99,7 +112,7 @@ fn test_enters_emergency_after_3_failures() {
         // A better way is to lock the file (or change permissions on backup dir so rename fails)
         // This is a unit test shortcut
     }
-    
+
     // Actually, let's just test CrossFilesystem rejection
     let bad_backup_dir = PathBuf::from("/nonexistent_permissions_dir/12398283");
     let res = HtaccessGuard::new(htaccess_path, bad_backup_dir, 500);
@@ -110,25 +123,40 @@ fn test_enters_emergency_after_3_failures() {
 fn test_handles_empty_rules() {
     let (htaccess_path, backup_dir) = setup_test_env("empty_rules");
     let mut guard = HtaccessGuard::new(htaccess_path.clone(), backup_dir, 500).unwrap();
-    
+
     // Empty rules clear the block (only BEGIN / END with no rules inside)
     let res = guard.write_rules(&[]);
     assert!(res.is_ok());
     let new_content = fs::read_to_string(&htaccess_path).unwrap();
-    assert!(!new_content.contains("192\\.168\\.1\\.100"), "IP should be removed");
-    assert!(!new_content.contains("# BEGIN IronGate"), "Empty rules should remove block completely");
+    assert!(
+        !new_content.contains("192\\.168\\.1\\.100"),
+        "IP should be removed"
+    );
+    assert!(
+        !new_content.contains("# BEGIN IronGate"),
+        "Empty rules should remove block completely"
+    );
 }
 
 #[test]
 fn test_rejects_over_max_rules() {
     let (htaccess_path, backup_dir) = setup_test_env("max_rules");
     let mut guard = HtaccessGuard::new(htaccess_path, backup_dir, 1).unwrap();
-    
+
     let rules = vec![
-        BlockRule { ip: IpAddr::from_str("1.1.1.1").unwrap(), reason: "".to_string() },
-        BlockRule { ip: IpAddr::from_str("2.2.2.2").unwrap(), reason: "".to_string() }
+        BlockRule {
+            ip: IpAddr::from_str("1.1.1.1").unwrap(),
+            reason: "".to_string(),
+        },
+        BlockRule {
+            ip: IpAddr::from_str("2.2.2.2").unwrap(),
+            reason: "".to_string(),
+        },
     ];
-    
+
     let res = guard.write_rules(&rules);
-    assert!(matches!(res, Err(irongate::enforcer::htaccess::Error::TooManyRules(2, 1))));
+    assert!(matches!(
+        res,
+        Err(irongate::enforcer::htaccess::Error::TooManyRules(2, 1))
+    ));
 }
