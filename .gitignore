@@ -1,0 +1,13 @@
+/target/
+**/*.rs.bk
+*.docx
+*.txt
+
+# IDEs
+.idea/
+.vscode/
+
+# Build artifacts e temporários
+/tmp/
+*.tmp
+*.bak
