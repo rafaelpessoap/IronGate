@@ -229,7 +229,10 @@ impl HtaccessGuard {
 
         backups.sort_by_key(|dir| dir.metadata().and_then(|m| m.modified()).ok());
         if backups.is_empty() {
-            return Err(Error::Io(std::io::Error::new(std::io::ErrorKind::NotFound, "Nenhum backup disponível para restauração")));
+            return Err(Error::Io(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "Nenhum backup disponível para restauração",
+            )));
         }
 
         if let Some(latest) = backups.last() {

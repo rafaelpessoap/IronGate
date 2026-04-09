@@ -80,7 +80,12 @@ fn test_cli_parse_custom_config() {
     use clap::Parser;
     use irongate::cli::Cli;
 
-    let cli = Cli::parse_from(["irongate", "--config", "/etc/irongate/config.toml", "status"]);
+    let cli = Cli::parse_from([
+        "irongate",
+        "--config",
+        "/etc/irongate/config.toml",
+        "status",
+    ]);
     assert_eq!(cli.config, "/etc/irongate/config.toml");
 }
 
@@ -115,10 +120,20 @@ fn test_stats_update_from_engine_state() {
     let ip1: IpAddr = "1.2.3.4".parse().unwrap();
     let ip2: IpAddr = "5.6.7.8".parse().unwrap();
 
-    let mut state1 = irongate::analytics::ip_tracker::IpState::new(ip1, "arsenal.com".to_string(), "Mozilla".to_string(), 300);
+    let mut state1 = irongate::analytics::ip_tracker::IpState::new(
+        ip1,
+        "arsenal.com".to_string(),
+        "Mozilla".to_string(),
+        300,
+    );
     state1.total_requests = 150;
 
-    let mut state2 = irongate::analytics::ip_tracker::IpState::new(ip2, "marketing.com".to_string(), "Bot".to_string(), 300);
+    let mut state2 = irongate::analytics::ip_tracker::IpState::new(
+        ip2,
+        "marketing.com".to_string(),
+        "Bot".to_string(),
+        300,
+    );
     state2.total_requests = 50;
     state2.ban_until = Some(chrono::Utc::now() + chrono::Duration::hours(1));
     state2.strikes = 2;
@@ -146,7 +161,12 @@ fn test_stats_save_and_load() {
 
     let mut states: HashMap<IpAddr, irongate::analytics::ip_tracker::IpState> = HashMap::new();
     let ip: IpAddr = "10.0.0.1".parse().unwrap();
-    let mut state = irongate::analytics::ip_tracker::IpState::new(ip, "test.com".to_string(), "UA".to_string(), 300);
+    let mut state = irongate::analytics::ip_tracker::IpState::new(
+        ip,
+        "test.com".to_string(),
+        "UA".to_string(),
+        300,
+    );
     state.total_requests = 999;
     states.insert(ip, state);
 

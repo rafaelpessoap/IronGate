@@ -1,17 +1,17 @@
-use tracing::{info, error, Level};
-use tracing_subscriber::FmtSubscriber;
-use std::sync::Arc;
-use tokio::sync::{mpsc, broadcast};
-use parking_lot::RwLock;
 use clap::Parser;
+use parking_lot::RwLock;
+use std::sync::Arc;
+use tokio::sync::{broadcast, mpsc};
+use tracing::{error, info, Level};
+use tracing_subscriber::FmtSubscriber;
 
+use irongate::analytics::AnalyticsEngine;
 use irongate::cli::Cli;
 use irongate::config::AppConfig;
-use irongate::dns_verify::DnsVerifier;
-use irongate::log_ingestor::LogIngestor;
-use irongate::analytics::AnalyticsEngine;
-use irongate::enforcer::Enforcer;
 use irongate::dashboard::{self, AppState};
+use irongate::dns_verify::DnsVerifier;
+use irongate::enforcer::Enforcer;
+use irongate::log_ingestor::LogIngestor;
 use irongate::notifications::Notifier;
 use irongate::persistence::PersistenceManager;
 use irongate::stats::StatsManager;
@@ -49,7 +49,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     for ip in &app_config.whitelist.server_ips {
         enforcer_instance.whitelist.insert(ip.clone());
     }
-    info!("Whitelist carregada: {} IPs", enforcer_instance.whitelist.len());
+    info!(
+        "Whitelist carregada: {} IPs",
+        enforcer_instance.whitelist.len()
+    );
     let enforcer = Arc::new(RwLock::new(enforcer_instance));
 
     // 2. Channels
@@ -60,7 +63,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 3. Analytics Engine & Persistence
     let persistence = PersistenceManager::new(&app_config.general.state_dir)?;
     let loaded_states = persistence.load();
-    let analytics = Arc::new(RwLock::new(AnalyticsEngine::new(loaded_states, app_config.clone(), block_tx.clone())));
+    let analytics = Arc::new(RwLock::new(AnalyticsEngine::new(
+        loaded_states,
+        app_config.clone(),
+        block_tx.clone(),
+    )));
 
     // 4. Notifications (webhooks)
     let notifier = Arc::new(Notifier::new(app_config.webhooks.clone()));
@@ -69,7 +76,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let dns_verifier = Arc::new(DnsVerifier::new(&app_config.whitelist.search_engines));
 
     // 6. Daily Stats
-    let stats = Arc::new(RwLock::new(StatsManager::new(&app_config.general.state_dir)?));
+    let stats = Arc::new(RwLock::new(StatsManager::new(
+        &app_config.general.state_dir,
+    )?));
 
     // 7. Log Ingestors (multi-vhost: spawn one per watch_file pattern)
     let watch_files = app_config.logs.watch_files.clone();
@@ -81,7 +90,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         });
     }
-    info!("Monitorando {} fontes de log", app_config.logs.watch_files.len());
+    info!(
+        "Monitorando {} fontes de log",
+        app_config.logs.watch_files.len()
+    );
 
     // 8. Dashboard
     let bind_addr = app_config.general.bind_addr.clone();
@@ -108,14 +120,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         while let Some(entry) = log_rx.recv().await {
             // Check known bad bot UAs
             let ua_lower = entry.user_agent.to_lowercase();
-            let is_known_bad = known_bots.iter().any(|bot| ua_lower.contains(&bot.to_lowercase()));
+            let is_known_bad = known_bots
+                .iter()
+                .any(|bot| ua_lower.contains(&bot.to_lowercase()));
 
             // Check whitelisted UAs
-            let is_whitelisted_ua = whitelist_uas.iter().any(|wua| ua_lower.contains(&wua.to_lowercase()));
+            let is_whitelisted_ua = whitelist_uas
+                .iter()
+                .any(|wua| ua_lower.contains(&wua.to_lowercase()));
 
             // DNS verify potential search engine bots (async)
             if !is_known_bad && !is_whitelisted_ua {
-                let potential_bot = ua_lower.contains("bot") || ua_lower.contains("crawler") || ua_lower.contains("spider");
+                let potential_bot = ua_lower.contains("bot")
+                    || ua_lower.contains("crawler")
+                    || ua_lower.contains("spider");
                 if potential_bot {
                     if let Some(_bot_name) = dns_ref.verify_bot(entry.client_ip).await {
                         // Verified search engine bot - skip analytics
@@ -207,7 +225,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let snap_interval = app_config.general.snapshot_interval_secs;
     let persistence_arc = Arc::new(persistence);
     tokio::spawn(async move {
-        if snap_interval == 0 { return; }
+        if snap_interval == 0 {
+            return;
+        }
         let mut interval = tokio::time::interval(std::time::Duration::from_secs(snap_interval));
         loop {
             interval.tick().await;
@@ -245,7 +265,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         info!("Configuracao recarregada com sucesso via SIGHUP.");
                     }
                     Err(e) => {
-                        error!("Falha ao recarregar config: {}. Mantendo config anterior.", e);
+                        error!(
+                            "Falha ao recarregar config: {}. Mantendo config anterior.",
+                            e
+                        );
                     }
                 }
             }

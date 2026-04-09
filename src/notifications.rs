@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, Instant};
-use tracing::{info, error, warn};
+use tracing::{error, info, warn};
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct WebhookConfig {
@@ -63,7 +63,10 @@ impl Notifier {
         if config.enabled {
             for url in &config.urls {
                 if !url.starts_with("https://") && !url.starts_with("http://") {
-                    warn!("Webhook URL invalida ignorada (deve comecar com http:// ou https://): {}", url);
+                    warn!(
+                        "Webhook URL invalida ignorada (deve comecar com http:// ou https://): {}",
+                        url
+                    );
                 }
             }
         }
@@ -93,14 +96,20 @@ impl Notifier {
             let mut last = self.last_alert.lock();
             if let Some(t) = *last {
                 if t.elapsed() < ALERT_COOLDOWN {
-                    info!("[ALERT][THROTTLED] {} - {} (cooldown ativo)", alert.title, alert.message);
+                    info!(
+                        "[ALERT][THROTTLED] {} - {} (cooldown ativo)",
+                        alert.title, alert.message
+                    );
                     return;
                 }
             }
             *last = Some(Instant::now());
         }
 
-        info!("[ALERT][{}] {} - {}", alert.level, alert.title, alert.message);
+        info!(
+            "[ALERT][{}] {} - {}",
+            alert.level, alert.title, alert.message
+        );
 
         for url in &self.config.urls {
             if !url.starts_with("http://") && !url.starts_with("https://") {
@@ -199,9 +208,13 @@ impl Notifier {
         self.send_alert(Alert {
             level: AlertLevel::Warning,
             title: "Possivel Ataque DDoS".to_string(),
-            message: format!("{} IPs bloqueados simultaneamente. Verificar dashboard.", count),
+            message: format!(
+                "{} IPs bloqueados simultaneamente. Verificar dashboard.",
+                count
+            ),
             timestamp: chrono::Utc::now().to_rfc3339(),
-        }).await;
+        })
+        .await;
     }
 
     pub async fn alert_restart_failed(&self, error: &str) {
@@ -210,6 +223,7 @@ impl Notifier {
             title: "Falha no Graceful Restart do OLS".to_string(),
             message: format!("Comando de restart falhou: {}", error),
             timestamp: chrono::Utc::now().to_rfc3339(),
-        }).await;
+        })
+        .await;
     }
 }

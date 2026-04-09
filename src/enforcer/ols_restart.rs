@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 use std::time::{Duration, Instant};
-use tracing::{info, warn, error};
+use tracing::{error, info, warn};
 
 use crate::config::GracefulRestartConfig;
 
@@ -57,7 +57,10 @@ impl OlsRestartManager {
 
         // Taxa limite por hora
         if self.history.len() >= self.max_per_hour {
-            error!("Restart bloqueado: atingiu limite de {} restarts por hora.", self.max_per_hour);
+            error!(
+                "Restart bloqueado: atingiu limite de {} restarts por hora.",
+                self.max_per_hour
+            );
             return false;
         }
 

@@ -58,12 +58,18 @@ impl Cli {
     /// Execute CLI-only commands that don't need the full daemon.
     /// Returns true if the command was handled (caller should exit).
     /// Returns false if the daemon should start normally.
-    pub fn execute_cli_command(&self, config: &crate::config::AppConfig) -> Result<bool, Box<dyn std::error::Error>> {
+    pub fn execute_cli_command(
+        &self,
+        config: &crate::config::AppConfig,
+    ) -> Result<bool, Box<dyn std::error::Error>> {
         match &self.command {
             None | Some(Commands::Run) => Ok(false), // Start daemon
 
             Some(Commands::Status) => {
-                println!("Consultando status do IronGate em {}...", config.general.bind_addr);
+                println!(
+                    "Consultando status do IronGate em {}...",
+                    config.general.bind_addr
+                );
                 // Use blocking HTTP request for CLI
                 let url = format!("http://{}/api/status", config.general.bind_addr);
                 println!("  Endpoint: {}", url);
@@ -77,14 +83,20 @@ impl Cli {
             Some(Commands::Ban { ip, duration }) => {
                 println!("Enviando ban para {} ({}s) via API...", ip, duration);
                 let url = format!("http://{}/api/block", config.general.bind_addr);
-                println!("  curl -X POST {} -H 'Content-Type: application/json' -d '{{\"ip\":\"{}\"}}'", url, ip);
+                println!(
+                    "  curl -X POST {} -H 'Content-Type: application/json' -d '{{\"ip\":\"{}\"}}'",
+                    url, ip
+                );
                 Ok(true)
             }
 
             Some(Commands::Unblock { ip }) | Some(Commands::Whitelist { ip }) => {
                 println!("Enviando whitelist para {} via API...", ip);
                 let url = format!("http://{}/api/whitelist", config.general.bind_addr);
-                println!("  curl -X POST {} -H 'Content-Type: application/json' -d '{{\"ip\":\"{}\"}}'", url, ip);
+                println!(
+                    "  curl -X POST {} -H 'Content-Type: application/json' -d '{{\"ip\":\"{}\"}}'",
+                    url, ip
+                );
                 Ok(true)
             }
 

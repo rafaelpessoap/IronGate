@@ -1,9 +1,9 @@
+use parking_lot::RwLock;
 use std::collections::HashMap;
 use std::net::IpAddr;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use parking_lot::RwLock;
-use tracing::{info, warn, debug};
+use tracing::{debug, info, warn};
 
 /// Cache entry for DNS verification results
 #[derive(Clone, Debug)]
@@ -86,7 +86,10 @@ impl DnsVerifier {
         }
 
         if result.is_legitimate {
-            info!("Bot verificado via DNS reverso: {} -> {:?}", ip, result.resolved_hostname);
+            info!(
+                "Bot verificado via DNS reverso: {} -> {:?}",
+                ip, result.resolved_hostname
+            );
             result.resolved_hostname
         } else {
             None
@@ -100,18 +103,17 @@ impl DnsVerifier {
 
     #[cfg(feature = "dns-verify")]
     async fn do_fcrdns_lookup(&self, ip: IpAddr) -> DnsResult {
-        use hickory_resolver::TokioAsyncResolver;
         use hickory_resolver::config::*;
+        use hickory_resolver::TokioAsyncResolver;
 
-        let resolver = TokioAsyncResolver::tokio(
-            ResolverConfig::default(),
-            ResolverOpts::default(),
-        );
+        let resolver =
+            TokioAsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default());
 
         // Step 1: Reverse DNS (IP -> hostname)
         let hostname = match resolver.reverse_lookup(ip).await {
             Ok(lookup) => {
-                let names: Vec<String> = lookup.iter()
+                let names: Vec<String> = lookup
+                    .iter()
                     .map(|name| name.to_string().trim_end_matches('.').to_string())
                     .collect();
                 if let Some(h) = names.into_iter().next() {
@@ -135,7 +137,9 @@ impl DnsVerifier {
         };
 
         // Step 2: Check if hostname matches a legitimate domain
-        let matched_bot = self.legitimate_domains.iter()
+        let matched_bot = self
+            .legitimate_domains
+            .iter()
             .find(|(domain, _)| hostname.ends_with(domain));
 
         if matched_bot.is_none() {
@@ -158,7 +162,10 @@ impl DnsVerifier {
                         cached_at: Instant::now(),
                     }
                 } else {
-                    warn!("FCrDNS falhou para {}: reverse={} mas forward nao bate", ip, hostname);
+                    warn!(
+                        "FCrDNS falhou para {}: reverse={} mas forward nao bate",
+                        ip, hostname
+                    );
                     DnsResult {
                         is_legitimate: false,
                         resolved_hostname: Some(hostname),

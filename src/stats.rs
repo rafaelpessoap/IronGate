@@ -80,7 +80,8 @@ impl StatsManager {
         self.current_stats.top_vhosts = vhost_map;
 
         // Count bans and top blocked IPs
-        let mut blocked: Vec<(String, u32)> = states.values()
+        let mut blocked: Vec<(String, u32)> = states
+            .values()
             .filter(|s| s.ban_until.is_some())
             .map(|s| (s.ip.to_string(), s.strikes))
             .collect();
@@ -92,7 +93,9 @@ impl StatsManager {
 
     /// Record a rule trigger for daily stats
     pub fn record_rule_trigger(&mut self, rule_name: &str) {
-        *self.current_stats.rule_triggers
+        *self
+            .current_stats
+            .rule_triggers
             .entry(rule_name.to_string())
             .or_insert(0) += 1;
     }
@@ -125,17 +128,15 @@ impl StatsManager {
         let path = stats_dir.join(format!("{}.json", date));
         if path.exists() {
             match fs::read_to_string(&path) {
-                Ok(content) => {
-                    match serde_json::from_str(&content) {
-                        Ok(stats) => {
-                            info!("Stats do dia {} restauradas.", date);
-                            return stats;
-                        }
-                        Err(e) => {
-                            error!("Falha ao parsear stats {}: {}", date, e);
-                        }
+                Ok(content) => match serde_json::from_str(&content) {
+                    Ok(stats) => {
+                        info!("Stats do dia {} restauradas.", date);
+                        return stats;
                     }
-                }
+                    Err(e) => {
+                        error!("Falha ao parsear stats {}: {}", date, e);
+                    }
+                },
                 Err(e) => {
                     error!("Falha ao ler stats {}: {}", date, e);
                 }

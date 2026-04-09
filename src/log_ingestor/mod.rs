@@ -1,9 +1,9 @@
 pub mod parser;
 
+use linemux::MuxedLines;
 use std::path::Path;
 use tokio::sync::mpsc;
-use linemux::MuxedLines;
-use tracing::{info, error, warn};
+use tracing::{error, info, warn};
 
 pub use crate::types::AccessLogEntry;
 
@@ -23,13 +23,19 @@ impl LogIngestor {
     pub async fn run(&self) -> std::io::Result<()> {
         let path = Path::new(&self.log_path);
         if !path.exists() {
-            warn!("Arquivo de log {} não existe ainda. Linemux aguardará a criação.", self.log_path);
+            warn!(
+                "Arquivo de log {} não existe ainda. Linemux aguardará a criação.",
+                self.log_path
+            );
         }
 
         let mut lines = MuxedLines::new()?;
         lines.add_file(&self.log_path).await?;
-        
-        info!("Iniciando tailing assíncrono (linemux) em: {}", self.log_path);
+
+        info!(
+            "Iniciando tailing assíncrono (linemux) em: {}",
+            self.log_path
+        );
 
         while let Ok(Some(line)) = lines.next_line().await {
             if let Some(entry) = parser::parse_line(line.line()) {

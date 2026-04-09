@@ -1,6 +1,6 @@
+use irongate::config::{EnforcerConfig, GracefulRestartConfig};
 use irongate::enforcer::htaccess::HtaccessGuard;
 use irongate::enforcer::Enforcer;
-use irongate::config::{EnforcerConfig, GracefulRestartConfig};
 use irongate::types::BlockRule;
 use std::fs;
 use std::net::IpAddr;
@@ -152,7 +152,10 @@ fn test_htaccess_ipv6_write() {
     assert!(res.is_ok());
 
     let content = fs::read_to_string(&htaccess_path).unwrap();
-    assert!(content.contains("2001\\:db8\\:\\:1"), "IPv6 deve ter : escapados");
+    assert!(
+        content.contains("2001\\:db8\\:\\:1"),
+        "IPv6 deve ter : escapados"
+    );
 }
 
 // ─── HTACCESS GUARD: BACKUP / RESTORE ───────────────────────────
@@ -211,7 +214,10 @@ fn test_detects_external_modification() {
     }];
 
     let result = guard.write_rules(&rules);
-    assert!(matches!(result, Err(irongate::enforcer::htaccess::Error::ExternalModification)));
+    assert!(matches!(
+        result,
+        Err(irongate::enforcer::htaccess::Error::ExternalModification)
+    ));
 }
 
 // ─── HTACCESS: RESTORE EXITS EMERGENCY ──────────────────────────
@@ -235,7 +241,8 @@ fn test_restore_exits_emergency() {
     assert!(guard.emergency_mode);
 
     // restore_backup deve desativar emergency_mode
-    let backups: Vec<_> = fs::read_dir(&backup_dir).unwrap()
+    let backups: Vec<_> = fs::read_dir(&backup_dir)
+        .unwrap()
         .filter_map(|e| e.ok())
         .filter(|d| d.path().extension().map_or(false, |ext| ext == "bak"))
         .collect();
@@ -243,7 +250,10 @@ fn test_restore_exits_emergency() {
         let _ = guard.restore_backup(&bak.path());
     }
 
-    assert!(!guard.emergency_mode, "Emergency mode deve ser desativado após restore");
+    assert!(
+        !guard.emergency_mode,
+        "Emergency mode deve ser desativado após restore"
+    );
 }
 
 // ─── HTACCESS: REFUSES WRITE IN EMERGENCY ───────────────────────
@@ -270,7 +280,10 @@ fn test_refuses_write_in_emergency() {
     }];
 
     let result = guard.write_rules(&rules);
-    assert!(matches!(result, Err(irongate::enforcer::htaccess::Error::EmergencyMode)));
+    assert!(matches!(
+        result,
+        Err(irongate::enforcer::htaccess::Error::EmergencyMode)
+    ));
 }
 
 // ─── HTACCESS: PRESERVES EACH BLOCK INDIVIDUALLY ────────────────
@@ -278,7 +291,12 @@ fn test_refuses_write_in_emergency() {
 #[test]
 fn test_preserves_wordpress_block() {
     let content = b"# BEGIN WordPress\n<IfModule mod_rewrite.c>\nRewriteEngine On\nRewriteBase /\n</IfModule>\n# END WordPress\n\n# BEGIN IronGate - GERENCIADO AUTOMATICAMENTE - N\xC3\x83O EDITAR\n# END IronGate\n";
-    verify_block_preserved(content, "wordpress", b"# BEGIN WordPress", b"# END WordPress");
+    verify_block_preserved(
+        content,
+        "wordpress",
+        b"# BEGIN WordPress",
+        b"# END WordPress",
+    );
 }
 
 #[test]
@@ -328,7 +346,9 @@ fn verify_block_preserved(content: &[u8], test_name: &str, marker_start: &[u8], 
 
     let result = fs::read(&htaccess_path).unwrap();
     assert!(
-        result.windows(marker_start.len()).any(|w| w == marker_start),
+        result
+            .windows(marker_start.len())
+            .any(|w| w == marker_start),
         "Marker {:?} deve ser preservado",
         String::from_utf8_lossy(marker_start)
     );

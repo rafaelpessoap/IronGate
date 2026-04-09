@@ -3,7 +3,7 @@ pub mod ols_restart;
 
 use std::collections::{HashMap, HashSet};
 use std::time::{Duration, Instant};
-use tracing::{info, error};
+use tracing::{error, info};
 
 pub use htaccess::HtaccessGuard;
 pub use ols_restart::OlsRestartManager;
@@ -73,7 +73,10 @@ impl Enforcer {
         }
 
         if self.dry_run {
-            info!("[DRY-RUN] Flush: {} bans seriam escritos no .htaccess (skipped).", self.active_bans.len());
+            info!(
+                "[DRY-RUN] Flush: {} bans seriam escritos no .htaccess (skipped).",
+                self.active_bans.len()
+            );
             self.pending_flush = false;
             self.last_flush = now;
             return Ok(());
@@ -110,7 +113,10 @@ impl Enforcer {
             }
             Err(e) => {
                 error!("Falha ao efetuar batch write no htaccess: {:?}", e);
-                Err(std::io::Error::new(std::io::ErrorKind::Other, format!("{:?}", e)))
+                Err(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    format!("{:?}", e),
+                ))
             }
         }
     }

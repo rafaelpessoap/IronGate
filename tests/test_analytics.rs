@@ -1,7 +1,7 @@
+use chrono::Utc;
 use irongate::analytics::ip_tracker::{IpState, SlidingWindow};
 use irongate::analytics::rules::evaluate_rules;
 use irongate::config::{DetectionRules, RuleConfig};
-use chrono::Utc;
 use std::net::IpAddr;
 use std::str::FromStr;
 
@@ -98,7 +98,10 @@ fn test_rule_ajax_flood_triggers() {
     // 1 page request → ratio 210/1 = 210 > 10 ✓, total 210 > 200 ✓
     state.page_window.add_request(now);
     state.window.add_request(now);
-    assert!(evaluate_rules(&mut state, &rules), "Ajax flood deveria disparar");
+    assert!(
+        evaluate_rules(&mut state, &rules),
+        "Ajax flood deveria disparar"
+    );
     assert!(state.threat_score >= 40.0);
 }
 
@@ -121,7 +124,9 @@ fn test_rule_ajax_flood_does_not_trigger_low_count() {
 fn test_rule_login_brute_triggers() {
     let rules = default_rules();
     let mut state = make_state();
-    state.custom_counters.insert("login_attempts".to_string(), 11);
+    state
+        .custom_counters
+        .insert("login_attempts".to_string(), 11);
     assert!(evaluate_rules(&mut state, &rules));
     assert!(state.threat_score >= 50.0);
 }
@@ -130,7 +135,9 @@ fn test_rule_login_brute_triggers() {
 fn test_rule_login_brute_below_threshold() {
     let rules = default_rules();
     let mut state = make_state();
-    state.custom_counters.insert("login_attempts".to_string(), 5);
+    state
+        .custom_counters
+        .insert("login_attempts".to_string(), 5);
     assert!(!evaluate_rules(&mut state, &rules));
 }
 
@@ -172,7 +179,9 @@ fn test_rule_checkout_spam_triggers() {
     let rules = default_rules();
     let mut state = make_state();
     // checkout_spam threshold=20, precisa >20
-    state.custom_counters.insert("checkout_attempts".to_string(), 25);
+    state
+        .custom_counters
+        .insert("checkout_attempts".to_string(), 25);
     assert!(evaluate_rules(&mut state, &rules));
 }
 
@@ -183,7 +192,10 @@ fn test_rule_empty_ua_adds_score_but_does_not_ban_alone() {
     let rules = default_rules();
     let mut state = make_state();
     state.user_agent = "   ".to_string();
-    assert!(!evaluate_rules(&mut state, &rules), "UA vazio sozinho dá 15, não basta pra 50");
+    assert!(
+        !evaluate_rules(&mut state, &rules),
+        "UA vazio sozinho dá 15, não basta pra 50"
+    );
     assert!(state.threat_score >= 15.0);
 }
 
@@ -209,7 +221,9 @@ fn test_whitelisted_ip_never_triggers() {
     let rules = default_rules();
     let mut state = make_state();
     state.is_whitelisted = true;
-    state.custom_counters.insert("login_attempts".to_string(), 100);
+    state
+        .custom_counters
+        .insert("login_attempts".to_string(), 100);
     let now = Utc::now();
     for _ in 0..500 {
         state.window.add_request(now);
@@ -222,7 +236,9 @@ fn test_already_banned_ip_skips() {
     let rules = default_rules();
     let mut state = make_state();
     state.ban_until = Some(Utc::now() + chrono::Duration::hours(1));
-    state.custom_counters.insert("login_attempts".to_string(), 100);
+    state
+        .custom_counters
+        .insert("login_attempts".to_string(), 100);
     assert!(!evaluate_rules(&mut state, &rules));
 }
 
@@ -269,6 +285,11 @@ fn test_disabled_rule_does_not_trigger() {
         score: 50,
     });
     let mut state = make_state();
-    state.custom_counters.insert("login_attempts".to_string(), 100);
-    assert!(!evaluate_rules(&mut state, &rules), "Regra desabilitada não deve disparar");
+    state
+        .custom_counters
+        .insert("login_attempts".to_string(), 100);
+    assert!(
+        !evaluate_rules(&mut state, &rules),
+        "Regra desabilitada não deve disparar"
+    );
 }

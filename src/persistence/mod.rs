@@ -148,11 +148,17 @@ impl PersistenceManager {
                     for (ip, state_data) in engine_state.states {
                         states.insert(ip, state_data.into());
                     }
-                    info!("Estado recuperado com sucesso: {} IPs salvos.", states.len());
+                    info!(
+                        "Estado recuperado com sucesso: {} IPs salvos.",
+                        states.len()
+                    );
                     states
                 }
                 Err(e) => {
-                    warn!("Aviso: Falha ao fazer parse do state.json ({}), iniciando zerado.", e);
+                    warn!(
+                        "Aviso: Falha ao fazer parse do state.json ({}), iniciando zerado.",
+                        e
+                    );
                     HashMap::new()
                 }
             },
