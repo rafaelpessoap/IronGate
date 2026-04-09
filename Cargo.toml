@@ -1,6 +1,6 @@
 [package]
 name = "irongate"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 
 [dependencies]
@@ -19,3 +19,13 @@ clap = { version = "4", features = ["derive"] }
 toml = "1.1"
 tower-http = { version = "0.6", features = ["cors"] }
 parking_lot = "0.12.5"
+reqwest = { version = "0.12", features = ["json"], default-features = false, optional = true }
+trust-dns-resolver = { version = "0.23", optional = true }
+
+[features]
+default = ["webhooks", "dns-verify"]
+webhooks = ["dep:reqwest"]
+dns-verify = ["dep:trust-dns-resolver"]
+
+[dev-dependencies]
+tempfile = "3.27.0"

@@ -370,8 +370,8 @@ impl HtaccessGuard {
 
     fn sanitize_ip(ip: &IpAddr) -> Result<String> {
         let str_ip = ip.to_string();
-        // escapa pontos se for v4
-        Ok(str_ip.replace('.', "\\."))
+        // Escapa pontos (IPv4) e dois-pontos (IPv6) para regex do Apache
+        Ok(str_ip.replace('.', "\\.").replace(':', "\\:"))
     }
 
     fn rotate_backups(&self, keep: usize) -> Result<()> {

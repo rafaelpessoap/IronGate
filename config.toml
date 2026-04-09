@@ -62,3 +62,10 @@ user_agents = [
   "meta-externalads", "meta-externalagent",
   "Go-http-client", "python-requests", "scrapy",
 ]
+
+[webhooks]
+enabled = false
+urls = [
+  # "https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_TOKEN",
+  # "https://api.telegram.org/botYOUR_TOKEN/sendMessage?chat_id=YOUR_CHAT_ID",
+]

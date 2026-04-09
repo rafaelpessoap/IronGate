@@ -92,6 +92,8 @@ pub struct AppConfig {
     pub enforcer: EnforcerConfig,
     pub whitelist: WhitelistConfig,
     pub known_bots: KnownBotsConfig,
+    #[serde(default)]
+    pub webhooks: crate::notifications::WebhookConfig,
 }
 
 impl AppConfig {

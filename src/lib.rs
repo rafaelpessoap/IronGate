@@ -1,6 +1,11 @@
 pub mod analytics;
+pub mod cli;
 pub mod config;
 pub mod dashboard;
+pub mod dns_verify;
 pub mod enforcer;
 pub mod log_ingestor;
+pub mod notifications;
+pub mod persistence;
+pub mod stats;
 pub mod types;

@@ -3,10 +3,12 @@ pub mod ols_restart;
 
 use std::collections::{HashMap, HashSet};
 use std::time::{Duration, Instant};
-use tracing::error;
+use tracing::{info, error};
 
 pub use htaccess::HtaccessGuard;
 pub use ols_restart::OlsRestartManager;
+
+use crate::config::EnforcerConfig;
 
 pub struct Enforcer {
     pub guard: HtaccessGuard,
@@ -15,20 +17,28 @@ pub struct Enforcer {
     pub restart_manager: OlsRestartManager,
     pub pending_flush: bool,
     pub last_flush: Instant,
+    pub dry_run: bool,
+    flush_interval: Duration,
 }
 
 impl Enforcer {
-    pub fn new(htaccess_path: &str) -> Result<Self, htaccess::Error> {
-        let path = std::path::PathBuf::from(htaccess_path);
-        let backup_dir = std::path::PathBuf::from(".irongate_backups");
-        let guard = HtaccessGuard::new(path, backup_dir, 1000)?;
+    pub fn new(config: &EnforcerConfig) -> Result<Self, htaccess::Error> {
+        let guard = HtaccessGuard::new(
+            config.htaccess_path.clone(),
+            config.backup_dir.clone(),
+            config.max_rules,
+        )?;
+        let restart_manager = OlsRestartManager::new(&config.graceful_restart);
+
         Ok(Self {
             guard,
             active_bans: HashMap::new(),
             whitelist: HashSet::new(),
-            restart_manager: OlsRestartManager::new(),
+            restart_manager,
             pending_flush: false,
             last_flush: Instant::now(),
+            dry_run: config.dry_run,
+            flush_interval: Duration::from_secs(config.flush_interval_secs),
         })
     }
 
@@ -36,8 +46,6 @@ impl Enforcer {
         if self.whitelist.contains(&ip) {
             return;
         }
-        
-        // TTL absoluto de expiracao
         let expire_at = Instant::now() + Duration::from_secs(duration_secs);
         self.active_bans.insert(ip, expire_at);
         self.pending_flush = true;
@@ -47,7 +55,6 @@ impl Enforcer {
         let now = Instant::now();
         let initial_len = self.active_bans.len();
         self.active_bans.retain(|_, &mut expire_at| expire_at > now);
-        
         let have_expired = self.active_bans.len() < initial_len;
         if have_expired {
             self.pending_flush = true;
@@ -61,8 +68,14 @@ impl Enforcer {
         }
 
         let now = Instant::now();
-        // Cooldown de batching de 5 segundos pra nao arrebentar o disco
-        if now.duration_since(self.last_flush) < Duration::from_secs(5) {
+        if now.duration_since(self.last_flush) < self.flush_interval {
+            return Ok(());
+        }
+
+        if self.dry_run {
+            info!("[DRY-RUN] Flush: {} bans seriam escritos no .htaccess (skipped).", self.active_bans.len());
+            self.pending_flush = false;
+            self.last_flush = now;
             return Ok(());
         }
 
@@ -76,18 +89,27 @@ impl Enforcer {
                 });
             }
         }
-        
+
         match self.guard.write_rules(&rules) {
             Ok(_) => {
-                tracing::info!("Htcaccess atualizado (Batch). Total bans: {}", rules.len());
+                info!("Htaccess atualizado (Batch). Total bans: {}", rules.len());
                 self.pending_flush = false;
                 self.last_flush = now;
-                // Exige restart gracefull do litespeed pra ele consumir as regras
-                self.restart_manager.request_restart();
+                self.restart_manager.request_restart(self.dry_run);
+                Ok(())
+            }
+            Err(htaccess::Error::ExternalModification) => {
+                // Plano §2.7: Atualizar hash e tentar no próximo ciclo
+                info!("Modificação externa detectada. Atualizando hash para o próximo ciclo.");
+                let _ = self.guard.refresh_hash();
+                Ok(())
+            }
+            Err(htaccess::Error::EmergencyMode) => {
+                error!("MODO EMERGÊNCIA ATIVO. Nenhuma escrita será feita.");
                 Ok(())
             }
             Err(e) => {
-                error!("Falha ao efeuar batch write no htaccess: {:?}", e);
+                error!("Falha ao efetuar batch write no htaccess: {:?}", e);
                 Err(std::io::Error::new(std::io::ErrorKind::Other, format!("{:?}", e)))
             }
         }
