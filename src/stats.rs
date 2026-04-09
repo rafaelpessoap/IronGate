@@ -124,7 +124,7 @@ impl StatsManager {
         &self.current_stats
     }
 
-    fn load_stats_file(stats_dir: &PathBuf, date: &str) -> DailyStats {
+    fn load_stats_file(stats_dir: &std::path::Path, date: &str) -> DailyStats {
         let path = stats_dir.join(format!("{}.json", date));
         if path.exists() {
             match fs::read_to_string(&path) {

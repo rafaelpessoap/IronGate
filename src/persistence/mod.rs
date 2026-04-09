@@ -22,11 +22,11 @@ impl From<&SlidingWindow> for SlidWinState {
     }
 }
 
-impl Into<SlidingWindow> for SlidWinState {
-    fn into(self) -> SlidingWindow {
+impl From<SlidWinState> for SlidingWindow {
+    fn from(val: SlidWinState) -> Self {
         SlidingWindow {
-            window_secs: self.window_secs,
-            request_timestamps: self.request_timestamps.into_iter().collect::<VecDeque<_>>(),
+            window_secs: val.window_secs,
+            request_timestamps: val.request_timestamps.into_iter().collect::<VecDeque<_>>(),
         }
     }
 }
@@ -70,23 +70,23 @@ impl From<&IpState> for IpStateData {
     }
 }
 
-impl Into<IpState> for IpStateData {
-    fn into(self) -> IpState {
+impl From<IpStateData> for IpState {
+    fn from(val: IpStateData) -> Self {
         IpState {
-            ip: self.ip,
-            first_seen: self.first_seen,
-            last_seen: self.last_seen,
-            user_agent: self.user_agent,
-            vhost: self.vhost,
-            window: self.window.into(),
-            ajax_window: self.ajax_window.into(),
-            page_window: self.page_window.into(),
-            total_requests: self.total_requests,
-            strikes: self.strikes,
-            ban_until: self.ban_until,
-            is_whitelisted: self.is_whitelisted,
-            threat_score: self.threat_score,
-            custom_counters: self.custom_counters,
+            ip: val.ip,
+            first_seen: val.first_seen,
+            last_seen: val.last_seen,
+            user_agent: val.user_agent,
+            vhost: val.vhost,
+            window: val.window.into(),
+            ajax_window: val.ajax_window.into(),
+            page_window: val.page_window.into(),
+            total_requests: val.total_requests,
+            strikes: val.strikes,
+            ban_until: val.ban_until,
+            is_whitelisted: val.is_whitelisted,
+            threat_score: val.threat_score,
+            custom_counters: val.custom_counters,
         }
     }
 }

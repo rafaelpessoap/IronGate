@@ -2,20 +2,11 @@ use serde::{Deserialize, Serialize};
 use std::time::{Duration, Instant};
 use tracing::{error, info, warn};
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Default, Deserialize, Clone)]
 pub struct WebhookConfig {
     pub enabled: bool,
     #[serde(default)]
     pub urls: Vec<String>,
-}
-
-impl Default for WebhookConfig {
-    fn default() -> Self {
-        Self {
-            enabled: false,
-            urls: Vec::new(),
-        }
-    }
 }
 
 #[derive(Debug, Serialize, Clone)]

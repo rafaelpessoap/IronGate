@@ -111,7 +111,7 @@ impl AnalyticsEngine {
             now - chrono::Duration::seconds(self.config.detection.window_seconds as i64 * 2);
         self.states.retain(|_, state| {
             // Limpar custom_counters junto com sliding windows expiradas
-            if state.last_seen < cutoff && !state.ban_until.is_some_and(|b| b > now) {
+            if state.last_seen < cutoff && state.ban_until.is_none_or(|b| b <= now) {
                 return false;
             }
             // Reset custom_counters se o IP expirou da janela principal

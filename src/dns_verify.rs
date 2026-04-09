@@ -154,7 +154,7 @@ impl DnsVerifier {
         match resolver.lookup_ip(&hostname).await {
             Ok(lookup) => {
                 let resolved_ips: Vec<IpAddr> = lookup.iter().collect();
-                let matches = resolved_ips.iter().any(|&resolved_ip| resolved_ip == ip);
+                let matches = resolved_ips.contains(&ip);
                 if matches {
                     DnsResult {
                         is_legitimate: true,

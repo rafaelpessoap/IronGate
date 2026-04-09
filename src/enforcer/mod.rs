@@ -113,10 +113,7 @@ impl Enforcer {
             }
             Err(e) => {
                 error!("Falha ao efetuar batch write no htaccess: {:?}", e);
-                Err(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("{:?}", e),
-                ))
+                Err(std::io::Error::other(format!("{:?}", e)))
             }
         }
     }
