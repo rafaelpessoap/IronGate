@@ -2,8 +2,7 @@ name: Release Builder
 
 on:
   push:
-    tags:
-      - 'v*' # Dispara quando uma tag como v1.0.0 for criada
+    branches: [ "main" ]
 
 permissions:
   contents: write
@@ -16,6 +15,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Instalar Rust Toolchain (Stable)
         uses: dtolnay/rust-toolchain@stable
@@ -35,10 +36,20 @@ jobs:
           cp config.toml release-pkg/ || true
           tar -czvf irongate-linux-x86_64.tar.gz -C release-pkg .
 
+      - name: Gerar Tag Automática
+        id: tag
+        run: |
+          TAG="v0.2.$(date +%Y%m%d%H%M%S)"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          git tag "$TAG"
+          git push origin "$TAG"
+
       - name: Publicar GitHub Release Oficial
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: ${{ steps.tag.outputs.tag }}
           files: irongate-linux-x86_64.tar.gz
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

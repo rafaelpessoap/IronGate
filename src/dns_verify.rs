@@ -100,8 +100,8 @@ impl DnsVerifier {
 
     #[cfg(feature = "dns-verify")]
     async fn do_fcrdns_lookup(&self, ip: IpAddr) -> DnsResult {
-        use trust_dns_resolver::TokioAsyncResolver;
-        use trust_dns_resolver::config::*;
+        use hickory_resolver::TokioAsyncResolver;
+        use hickory_resolver::config::*;
 
         let resolver = TokioAsyncResolver::tokio(
             ResolverConfig::default(),
